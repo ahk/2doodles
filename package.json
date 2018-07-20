@@ -1,0 +1,16 @@
+{
+  "name": "mcu-2doodles",
+  "version": "0.0.0",
+  "license": "MIT",
+  "scripts": {
+    "build": "webpack -p",
+    "start": "webpack-dev-server -d --content-base ./public"
+  },
+  "dependencies": {
+    "typescript": "2.9.2",
+    "ts-loader": "4.4.2",
+    "webpack": "4.16.1",
+    "webpack-cli": "3.1.0",
+    "webpack-dev-server": "3.1.4"
+  }
+}
