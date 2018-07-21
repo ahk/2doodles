@@ -1,6 +1,37 @@
 <html>
+  <head>
+    <style>
+      body {
+        background-color: linen;
+        align-content: center;
+      }
+
+      #container {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+
+      #title {
+        margin: auto;
+      }
+      
+      #canvas {
+        background-color: #DDFFDD;
+        border: 3px solid maroon;
+        flex: 1 0 auto;
+        margin: 0 14%;
+      }
+    </style>
+  </head>
+
   <body>
-      <div id="root">APP HERE</div>
-      <script src="./build/app.js"></script>
+    <div id="container">
+      <h1 id="title">Doodles here.</h1>
+      <canvas id="canvas"></canvas>
+    </div>
+    <script type="module" src="./build/app.js"></script>
   </body>
 </html>
