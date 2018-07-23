@@ -1,21 +1,24 @@
-interface Vec2 {
-    x: number;
-    y: number;
+import * as P from "paper";
+
+interface BodyPart {
+    point: P.Point;
+    path: P.Path;
+};
+type PartList = [BodyPart];
+
+// hack to work around Paper.js missing event type for its callbacks
+interface PaperFrameEvent {
+    count: number;
+    time: number;
+    delta: number;
 }
 
-type VecList = Vec2[];
-
 class Draw {
-    public static clearFrame(ctx: CanvasRenderingContext2D) {
-        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
-    }
+    public static drawCircle(point: P.Point, radius: number): P.Path {
+        const path = new P.Path.Circle(point, radius);
+        path.fillColor = 'black';
 
-    public static drawCircle(ctx: CanvasRenderingContext2D,
-        vec: Vec2, radius: number
-    ) {
-        ctx.beginPath();
-        ctx.arc(vec.x, vec.y, radius, 0, 2*Math.PI);
-        ctx.fill();
+        return path;
     }
 
     public static unsignedRandom(): number { 
@@ -24,98 +27,94 @@ class Draw {
 }
 
 class Doodle {
-    head: VecList = [];
-    eye: VecList = [];
-    appendage: VecList = [];
-    body: VecList = [];
-    circleRadius: number;
+    head: PartList;
+    eye: PartList;
+    appendage: PartList;
+    body: PartList;
 
     constructor() {
+        this.head = <PartList>[];
+        this.eye = <PartList>[];
+        this.appendage = <PartList>[];
+        this.body = <PartList>[];
     }
 
-    tick(deltaMs: number) {
-        this.appendage.forEach((vec) => {
-            const displace = this.circleRadius * (deltaMs / 1000.0);
-            vec.x += displace * Draw.unsignedRandom();
-            vec.y += displace * Draw.unsignedRandom();
+    radius(): number {
+        const s = P.view.viewSize;
+        return Math.min(s.width, s.height) / 20;
+    }
+
+    tick(deltaS: number) {
+        this.appendage.forEach((part) => {
+            const amp = this.radius() * deltaS * 2;
+            const displace = new P.Point(
+                amp * Draw.unsignedRandom(),
+                amp * Draw.unsignedRandom()
+            );
+
+            part.point.x += displace.x;
+            part.point.y += displace.y;
         })
     }
 
-    render(ctx) {
-        this.appendage.forEach((vec) => {
-            Draw.drawCircle(ctx, vec, this.circleRadius)
+    render() {
+        // initialize or update path data
+        this.appendage.forEach((part) => {
+            if (part.path === null) {
+                part.path = Draw.drawCircle(part.point, this.radius())
+            }
+            else {
+                part.path.position = part.point;
+            }
         });
     }
 }
 
 class App {
     el: HTMLCanvasElement;
-    ctx: CanvasRenderingContext2D;
     doodle: Doodle;
     lastTimestamp: number;
 
     constructor(document: Document) {
         this.el = <HTMLCanvasElement>document.getElementById('canvas');
-        this.ctx = this.el.getContext("2d");
 
-        this.el.onclick = this.onClick.bind(this);
-        window.addEventListener("resize", this.onResize.bind(this))
+        // setup Paper.js against canvas
+        P.setup(this.el);
+        // view bindings
+        // TODO: resizing is broken, for some reason Paper.js view likes to
+        // strictly style the canvas element dims and won't respect updates to viewSize
+        P.view.onFrame = this.onAnimationFrame.bind(this);
+        // mouse bindings
+        const tool = new P.Tool();
+        tool.onMouseDown = this.onClick.bind(this);
 
         this.doodle = new Doodle();
         this.lastTimestamp = 0;
-
-        this.updateCanvasDimensions();
     }
 
-    // sets coordinate space for canvas
-    updateCanvasDimensions() {
-        const dim = {
-            x: this.el.clientWidth,
-            y: this.el.clientHeight,
-        }
+    onClick(event: P.ToolEvent) {
+        this.doodle.appendage.push({
+            point: event.point,
+            path: null
+        })
 
-        this.doodle.circleRadius = Math.min(dim.x, dim.y) / 20;
-        this.el.setAttribute('width', dim.x.toString());
-        this.el.setAttribute('height', dim.y.toString());
-    }
-
-    onClick(event: MouseEvent) {
-        const vec = this.coordsDocumentToCanvas({
-            x: event.clientX,
-            y: event.clientY
-        });
-
-        this.doodle.appendage.push(vec)
         this.updateFrame();
     }
 
-    onResize(event: UIEvent) {
-        this.updateCanvasDimensions();
-        this.updateFrame();
-    }
+    onAnimationFrame(event: PaperFrameEvent) {
+        this.doodle.tick(event.delta);
+        this.doodle.render();
+        // FIXME: is this needed if we are using Paper.js onFrame?
+        P.view.draw();
 
-    onAnimationFrame(nowTimestamp: number) {
-        if (this.lastTimestamp === 0) { this.lastTimestamp = nowTimestamp; }
-        const deltaMs = nowTimestamp - this.lastTimestamp;
-        this.lastTimestamp = nowTimestamp
-
-        Draw.clearFrame(this.ctx);
-        this.doodle.tick(deltaMs);
-        this.doodle.render(this.ctx);
-
-        // ALWAYS RENDER
         this.updateFrame();
     }
 
     updateFrame() {
-        window.requestAnimationFrame(this.onAnimationFrame.bind(this))
-    }
-
-    coordsDocumentToCanvas(vec: Vec2): Vec2 {
-        return {
-            x: vec.x - this.el.offsetLeft,
-            y: vec.y - this.el.offsetTop,
-        };
+        // FIXME: is this needed if we are using Paper.js onClick/onResize etc?
+        // supposedly uses requestAnimationFrame under the hood
+        P.view.update();
+        P.view.requestUpdate();
     }
 }
 
