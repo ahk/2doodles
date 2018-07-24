@@ -4,6 +4,7 @@ interface BodyPart {
     point: P.Point;
     defaultPoint: P.Point;
     radius: number;
+    color: string;
     path?: P.Path;
 };
 type PartList = BodyPart[];
@@ -16,9 +17,9 @@ interface PaperFrameEvent {
 }
 
 class Draw {
-    public static drawCircle(point: P.Point, radius: number): P.Path {
+    public static drawCircle(point: P.Point, radius: number, color: string): P.Path {
         const path = new P.Path.Circle(point, radius);
-        path.fillColor = 'black';
+        path.fillColor = color;
 
         return path;
     }
@@ -53,19 +54,22 @@ class Doodle {
         this.head.push({
             point: new P.Point(sc.x, sc.y - 2.0*radius),
             defaultPoint: new P.Point(sc.x, sc.y - 2.0*radius),
-            radius: radius * 2.0
+            radius: radius * 2.0,
+            color: '#333333',
         });
 
         this.eye = <PartList>[]
         this.eye.push({
-            point: new P.Point(sc.x + radius/3.0, sc.y - 2.0*radius),
-            defaultPoint: new P.Point(sc.x + radius/3.0, sc.y - 2.0*radius),
-            radius: radius / 6.0
+            point: new P.Point(sc.x + radius/2.5, sc.y - 2.5*radius),
+            defaultPoint: new P.Point(sc.x + radius/2.5, sc.y - 2.5*radius),
+            radius: radius / 6.0,
+            color: '#FFFFFF',
         });
         this.eye.push({
-            point: new P.Point(sc.x - radius/3.0, sc.y - 2.0*radius),
-            defaultPoint: new P.Point(sc.x - radius/3.0, sc.y - 2.0*radius),
-            radius: radius / 6.0
+            point: new P.Point(sc.x - radius/2.5, sc.y - 2.5*radius),
+            defaultPoint: new P.Point(sc.x - radius/2.5, sc.y - 2.5*radius),
+            radius: radius / 6.0,
+            color: '#FFFFFF',
         });
 
         this.appendage = <PartList>[]
@@ -73,30 +77,35 @@ class Doodle {
         this.appendage.push({
             point: new P.Point(sc.x + 3.0*radius, sc.y - 0.7*radius),
             defaultPoint: new P.Point(sc.x + 3.0*radius, sc.y - 0.7*radius),
-            radius: radius
+            radius: radius,
+            color: '#DDDDDD',
         });
         this.appendage.push({
             point: new P.Point(sc.x - 3.0*radius, sc.y - 0.7*radius),
             defaultPoint: new P.Point(sc.x - 3.0*radius, sc.y - 0.7*radius),
-            radius: radius
+            radius: radius,
+            color: '#DDDDDD',
         });
         // legs
         this.appendage.push({
             point: new P.Point(sc.x + radius, sc.y + radius),
-            defaultPoint: new P.Point(sc.x + radius, sc.y + radius),
-            radius: radius * 1.5
+            defaultPoint: new P.Point(sc.x + radius, sc.y + 2.0*radius),
+            radius: radius * 1.5,
+            color: '#AAAAAA',
         });
         this.appendage.push({
             point: new P.Point(sc.x - radius, sc.y + radius),
-            defaultPoint: new P.Point(sc.x - radius, sc.y + radius),
-            radius: radius * 1.5
+            defaultPoint: new P.Point(sc.x - radius, sc.y + 2.0*radius),
+            radius: radius * 1.5,
+            color: '#AAAAAA',
         });
 
         this.body = <PartList>[];
         this.body.push({
             point: sc,
             defaultPoint: sc,
-            radius: radius * 3.0
+            radius: radius * 3.0,
+            color: '#000000',
         });
     }
 
@@ -124,18 +133,20 @@ class Doodle {
     renderCirclePart(part: BodyPart) {
         if (part.path) {
             part.path.position = part.point;
+            part.path.fillColor = part.color;
         }
         else {
-            part.path = Draw.drawCircle(part.point, part.radius);
+            part.path = Draw.drawCircle(part.point, part.radius, part.color);
         }
     }
 
     render() {
+        // FIXME: Use layers for grouping these
         // initialize or update path data
         const circRender = this.renderCirclePart.bind(this)
+        this.body.forEach(circRender);
         this.head.forEach(circRender);
         this.eye.forEach(circRender);
-        this.body.forEach(circRender);
         this.appendage.forEach(circRender);
     }
 }
@@ -168,7 +179,8 @@ class App {
         this.doodle.appendage.push({
             point: event.point,
             defaultPoint: event.point,
-            radius: Draw.ptPixels()
+            radius: Draw.ptPixels(),
+            color: '#DDDDDD'
         })
 
         this.updateFrame();
