@@ -2,9 +2,11 @@ import * as P from "paper";
 
 interface BodyPart {
     point: P.Point;
-    path: P.Path;
+    defaultPoint: P.Point;
+    radius: number;
+    path?: P.Path;
 };
-type PartList = [BodyPart];
+type PartList = BodyPart[];
 
 // hack to work around Paper.js missing event type for its callbacks
 interface PaperFrameEvent {
@@ -24,6 +26,17 @@ class Draw {
     public static unsignedRandom(): number { 
         return (Math.random() * 2) - 1;
     }
+
+    public static viewCenter(): P.Point {
+        const cSize = P.view.viewSize;
+        // FIXME: not sure why I can't divide the size or point itself with the Paperjs overloads ...
+        return (new P.Point(cSize.width/2.0, cSize.height/2.0));
+    }
+
+    public static ptPixels(): number {
+        const s = P.view.viewSize;
+        return Math.min(s.width, s.height) / 20;
+    }
 }
 
 class Doodle {
@@ -33,40 +46,97 @@ class Doodle {
     body: PartList;
 
     constructor() {
+        const sc = Draw.viewCenter();
+        const radius = Draw.ptPixels();
+
         this.head = <PartList>[];
-        this.eye = <PartList>[];
-        this.appendage = <PartList>[];
+        this.head.push({
+            point: new P.Point(sc.x, sc.y - 2.0*radius),
+            defaultPoint: new P.Point(sc.x, sc.y - 2.0*radius),
+            radius: radius * 2.0
+        });
+
+        this.eye = <PartList>[]
+        this.eye.push({
+            point: new P.Point(sc.x + radius/3.0, sc.y - 2.0*radius),
+            defaultPoint: new P.Point(sc.x + radius/3.0, sc.y - 2.0*radius),
+            radius: radius / 6.0
+        });
+        this.eye.push({
+            point: new P.Point(sc.x - radius/3.0, sc.y - 2.0*radius),
+            defaultPoint: new P.Point(sc.x - radius/3.0, sc.y - 2.0*radius),
+            radius: radius / 6.0
+        });
+
+        this.appendage = <PartList>[]
+        // arms
+        this.appendage.push({
+            point: new P.Point(sc.x + 3.0*radius, sc.y - 0.7*radius),
+            defaultPoint: new P.Point(sc.x + 3.0*radius, sc.y - 0.7*radius),
+            radius: radius
+        });
+        this.appendage.push({
+            point: new P.Point(sc.x - 3.0*radius, sc.y - 0.7*radius),
+            defaultPoint: new P.Point(sc.x - 3.0*radius, sc.y - 0.7*radius),
+            radius: radius
+        });
+        // legs
+        this.appendage.push({
+            point: new P.Point(sc.x + radius, sc.y + radius),
+            defaultPoint: new P.Point(sc.x + radius, sc.y + radius),
+            radius: radius * 1.5
+        });
+        this.appendage.push({
+            point: new P.Point(sc.x - radius, sc.y + radius),
+            defaultPoint: new P.Point(sc.x - radius, sc.y + radius),
+            radius: radius * 1.5
+        });
+
         this.body = <PartList>[];
+        this.body.push({
+            point: sc,
+            defaultPoint: sc,
+            radius: radius * 3.0
+        });
     }
 
     radius(): number {
-        const s = P.view.viewSize;
-        return Math.min(s.width, s.height) / 20;
+        return Draw.ptPixels();
     }
 
     tick(deltaS: number) {
+        this.head.forEach((part) => {});
+        this.eye.forEach((part) => {});
+        this.body.forEach((part) => {});
+
         this.appendage.forEach((part) => {
-            const amp = this.radius() * deltaS * 2;
+            const amp = this.radius() * 10 * deltaS * Math.random();
             const displace = new P.Point(
                 amp * Draw.unsignedRandom(),
                 amp * Draw.unsignedRandom()
             );
 
-            part.point.x += displace.x;
-            part.point.y += displace.y;
+            part.point.x = part.defaultPoint.x + displace.x;
+            part.point.y = part.defaultPoint.y + displace.y;
         })
+    }
+
+    renderCirclePart(part: BodyPart) {
+        if (part.path) {
+            part.path.position = part.point;
+        }
+        else {
+            part.path = Draw.drawCircle(part.point, part.radius);
+        }
     }
 
     render() {
         // initialize or update path data
-        this.appendage.forEach((part) => {
-            if (part.path === null) {
-                part.path = Draw.drawCircle(part.point, this.radius())
-            }
-            else {
-                part.path.position = part.point;
-            }
-        });
+        const circRender = this.renderCirclePart.bind(this)
+        this.head.forEach(circRender);
+        this.eye.forEach(circRender);
+        this.body.forEach(circRender);
+        this.appendage.forEach(circRender);
     }
 }
 
@@ -90,12 +160,15 @@ class App {
 
         this.doodle = new Doodle();
         this.lastTimestamp = 0;
+
+        this.updateFrame();
     }
 
     onClick(event: P.ToolEvent) {
         this.doodle.appendage.push({
             point: event.point,
-            path: null
+            defaultPoint: event.point,
+            radius: Draw.ptPixels()
         })
 
         this.updateFrame();
