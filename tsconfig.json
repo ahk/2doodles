@@ -2,10 +2,11 @@
     "compilerOptions": {
         "target": "es5",
         "module": "es6",
-        "sourceMap": true,
+        // "sourceMap": true,
         "noImplicitAny": true,
     },
     "include": [
-        "src"
+        "src",
+        // "node_modules/paper/dist/paper-core.js"
     ]
 }

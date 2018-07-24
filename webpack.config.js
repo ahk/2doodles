@@ -9,6 +9,7 @@ module.exports = {
     extensions: ['.ts', '.tsx', '.js']
   },
   module: {
+    noParse: /node_modules/,
     rules: [
       {
         test: /\.tsx?$/,
