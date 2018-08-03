@@ -1,4 +1,17 @@
 ### ITEMS
+* editor UI
+    - [ ] select part tool
+        - [ ] left-click to enter/exit tools (radio button)
+        - [ ] left-click to place
+        - [ ] right click/shift-click to remove
+        - [ ] click and drag to draw
+    - [ ] no selection
+        - [ ] click to select segment
+        - [ ] double click select all segments in part
+    - [ ] selected segment
+        - [ ] click and drag to translate segment
+        - [ ] click without hit to deselect segment
+        - [ ] double click select all segments in part
 * procedural animation
     - [ ] eyes blink
     - [ ] mouth wobbles
