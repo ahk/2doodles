@@ -1,16 +1,22 @@
 # 2DOODLES
 
+## install dependencies (node_modules)
+
+```bash
+yarn
+```
+
 ## develop
 
 ```bash
-npm run start:dev
-npm run start:prod
+yarn run start:dev
+yarn run start:prod
 (http://localhost:8080)
 ```
 
 ## build
 
 ```bash
-npm run build:dev
-npm run build:prod
+yarn run build:dev
+yarn run build:prod
 ```
