@@ -1,4 +1,7 @@
+#
+
 ### ITEMS
+
 * editor UI
     - [ ] select part tool
         - [ ] left-click to enter/exit tools (radio button)
@@ -29,5 +32,4 @@
     * stay
 * code quality
     * typescript correctness/strictness
-    * phase out classes
     * correctly package/cache/sourcemap paper.js

@@ -1,12 +1,16 @@
+# 2DOODLES
+
 ## develop
+
 ```bash
-npm start:dev
-npm start:prod
+npm run start:dev
+npm run start:prod
 (http://localhost:8080)
 ```
 
 ## build
+
 ```bash
-npm build:dev
-npm build:prod
+npm run build:dev
+npm run build:prod
 ```
