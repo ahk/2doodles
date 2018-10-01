@@ -1,7 +1,14 @@
 import P from 'paper';
 import Draw from './draw';
 import {Doodle} from './doodle';
-import {Tool, ToolGroup} from './tools';
+import {Tool, ToolGroup, ToolName} from './tools';
+
+// FIXME: is this the right thing to use to enforce exhaustiveness checks in switch statements?
+// http://www.typescriptlang.org/docs/handbook/advanced-types.html
+// (exhaustiveness checking)
+function assertNever(x: never): never {
+    throw new Error("Unexpected object: " + x);
+}
 
 // FIXME: hack to work around Paper.js missing event type for its callbacks
 interface PaperFrameEvent {
@@ -9,6 +16,12 @@ interface PaperFrameEvent {
     time: number;
     delta: number;
 }
+const enum PaperMouseEventButtons {
+    Left = 1,
+    Right = 2,
+    Middle = 4,
+}
+
 class App {
     el: HTMLCanvasElement;
     doodle: Doodle;
@@ -18,6 +31,8 @@ class App {
 
     constructor(document: Document) {
         this.el = <HTMLCanvasElement>document.getElementById('canvas');
+        // prevent right click context menu
+        this.el.addEventListener('contextmenu', event => event.preventDefault());
 
         // setup Paper.js against canvas
         P.setup(this.el);
@@ -71,13 +86,58 @@ class App {
         this.updateFrame();
     }
 
-    onClick(event: P.ToolEvent) {
-        if (this.currentTool === this.tools.appendage) {
-            const genPart = this.currentTool.makePart(event.point);
-            this.doodle.appendage.push(genPart);
-        }
+    getCurrentPartList() {
+        const tool = this.currentTool;
+        const doodle = this.doodle;
 
+        // FIXME: for some reason compile time exhaustiveness checking
+        // requires throwing or returning a never type, which can't happen
+        // inline conveniently (without being a return switch statement).
+        // Is there a better way to do this?
+        switch (tool.name) {
+            case ToolName.Head:
+                return doodle.head;
+            case ToolName.Appendage:
+                return doodle.appendage;
+            case ToolName.Eye:
+                return doodle.eye;
+            case ToolName.Body:
+                return doodle.body;
+            default:
+                return assertNever(tool.name);
+        }
+    }
+
+    // FIXME: this should be typeof P.ToolEvent but it lacks a type signature to access original event button type
+    onClick(event: any) {
+        const buttons: PaperMouseEventButtons = event.event.buttons;
+        switch (buttons) {
+            case PaperMouseEventButtons.Left:
+                return this.onLeftClick(event);
+            case PaperMouseEventButtons.Right:
+                return this.onRightClick(event);
+            case PaperMouseEventButtons.Middle:
+                return this.onMiddleClick(event);
+            default:
+                return assertNever(buttons);
+        }
+    }
+
+    onLeftClick(event: P.MouseEvent) {
+        event.preventDefault();
+        const genPart = this.currentTool.makePart(event.point);
+        this.getCurrentPartList().push(genPart);
         this.updateFrame();
+    }
+
+    onRightClick(event: P.MouseEvent) {
+        event.preventDefault();
+        console.log('rclick not implemented')
+    }
+
+    onMiddleClick(event: P.MouseEvent) {
+        event.preventDefault();
+        console.log('mclick not implemented')
     }
 
     onAnimationFrame(event: PaperFrameEvent) {

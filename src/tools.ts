@@ -3,10 +3,19 @@ import {BodyPart} from './doodle';
 
 type GenFunc = (point: P.Point) => BodyPart;
 
+export const enum ToolName {
+    Head,
+    Appendage,
+    Eye,
+    Body,
+};
+
 export class Tool {
+    readonly name: ToolName;
     readonly genFunc: GenFunc;
 
-    constructor(genFunc: GenFunc) {
+    constructor(name: ToolName, genFunc: GenFunc) {
+        this.name = name;
         this.genFunc = genFunc;
     };
 
@@ -31,10 +40,10 @@ export class ToolGroup {
     readonly body: Tool;
 
     constructor({head, appendage, eye, body}: ToolGroupArgs) {
-        this.head = new Tool(head);
-        this.appendage = new Tool(appendage);
-        this.eye = new Tool(eye);
-        this.body = new Tool(body);
+        this.head = new Tool(ToolName.Head, head);
+        this.appendage = new Tool(ToolName.Appendage, appendage);
+        this.eye = new Tool(ToolName.Eye, eye);
+        this.body = new Tool(ToolName.Body, body);
     };
 };
 
