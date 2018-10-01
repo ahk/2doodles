@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
+    "npm-audit":"npm shrinkwrap; npm audit; rm npm-shrinkwrap.json",
     "build": "npm run build:dev",
     "start": "npm run start:dev",
     "build:dev": "webpack -d --env dev --content-base ./public",
