@@ -1,7 +1,7 @@
 import P from 'paper';
 import Draw from './draw'
 
-export interface BodyPart {
+export type BodyPart = {
     point: P.Point;
     defaultPoint: P.Point;
     radius: number;

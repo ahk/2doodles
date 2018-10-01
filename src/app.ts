@@ -1,6 +1,7 @@
 import P from 'paper';
-import Draw from './draw'
-import {Doodle, BodyPart, PartList} from './doodle'
+import Draw from './draw';
+import {Doodle} from './doodle';
+import {Tool, ToolGroup} from './tools';
 
 // FIXME: hack to work around Paper.js missing event type for its callbacks
 interface PaperFrameEvent {
@@ -8,11 +9,12 @@ interface PaperFrameEvent {
     time: number;
     delta: number;
 }
-
 class App {
     el: HTMLCanvasElement;
     doodle: Doodle;
     lastTimestamp: number;
+    currentTool: Tool;
+    tools: ToolGroup;
 
     constructor(document: Document) {
         this.el = <HTMLCanvasElement>document.getElementById('canvas');
@@ -30,16 +32,50 @@ class App {
         this.doodle = new Doodle();
         this.lastTimestamp = 0;
 
+        this.tools = new ToolGroup({
+            head: (point: P.Point) => {
+                return {
+                    point: point,
+                    defaultPoint: point,
+                    radius: Draw.ptPixels(),
+                    color: '#DDDDDD'
+                };
+            },
+            appendage: (point: P.Point) => {
+                return {
+                    point: point,
+                    defaultPoint: point,
+                    radius: Draw.ptPixels(),
+                    color: '#DDDDDD'
+                };
+            },
+            eye: (point: P.Point) => {
+                return {
+                    point: point,
+                    defaultPoint: point,
+                    radius: Draw.ptPixels(),
+                    color: '#DDDDDD'
+                };
+            },
+            body: (point: P.Point) => {
+                return {
+                    point: point,
+                    defaultPoint: point,
+                    radius: Draw.ptPixels(),
+                    color: '#DDDDDD'
+                };
+            },
+        });
+        this.currentTool = this.tools.appendage;
+
         this.updateFrame();
     }
 
     onClick(event: P.ToolEvent) {
-        this.doodle.appendage.push({
-            point: event.point,
-            defaultPoint: event.point,
-            radius: Draw.ptPixels(),
-            color: '#DDDDDD'
-        })
+        if (this.currentTool === this.tools.appendage) {
+            const genPart = this.currentTool.makePart(event.point);
+            this.doodle.appendage.push(genPart);
+        }
 
         this.updateFrame();
     }
