@@ -6,7 +6,8 @@
     - [ ] select part tool
         - [x] left-click to enter/exit tools (radio button)
         - [x] left-click to place
-        - [ ] right click/shift-click to remove
+        - [ ] right click deselect
+        - [ ] shift-click to remove
         - [ ] click and drag to draw
     - [ ] no selection
         - [ ] click to select segment
