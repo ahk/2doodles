@@ -4,7 +4,7 @@
 
 * editor UI
     - [ ] select part tool
-        - [ ] left-click to enter/exit tools (radio button)
+        - [x] left-click to enter/exit tools (radio button)
         - [x] left-click to place
         - [ ] right click/shift-click to remove
         - [ ] click and drag to draw
@@ -19,8 +19,8 @@
     - [ ] eyes blink
     - [ ] head wobbles
     - [ ] body wobbles
-    - [ ] appendages are a chain
-    - [ ] appendages ambulate
+    - [ ] arms are a chain
+    - [ ] arms ambulate
     - [ ] skeleton
         * physical simulation and procedural skeletal rigging
 * creature behavior

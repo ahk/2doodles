@@ -1,5 +1,4 @@
 import P from 'paper';
-import Draw from './draw';
 import {Doodle} from './doodle';
 import {Tool, ToolGroup, ToolName} from './tools';
 
@@ -22,90 +21,125 @@ const enum PaperMouseEventButtons {
     Middle = 4,
 }
 
+type ToolDomName = 'head' | 'arm' | 'eye' | 'body';
+function isToolDomName(name: ToolDomName | string | null): name is ToolDomName {
+    if (name === 'head') { return true; }
+    else if (name === 'arm') { return true; }
+    else if (name === 'eye') { return true; }
+    else if (name === 'body') { return true; }
+    else { return false; }
+}
+
 class App {
-    el: HTMLCanvasElement;
+    canvasEl: HTMLCanvasElement;
+    toolSelectEl: HTMLElement;
     doodle: Doodle;
     lastTimestamp: number;
     currentTool: Tool;
     tools: ToolGroup;
 
     constructor(document: Document) {
-        this.el = <HTMLCanvasElement>document.getElementById('canvas');
-        // prevent right click context menu
-        this.el.addEventListener('contextmenu', event => event.preventDefault());
+        // FIXME: what does this typescript casting actually do?
+        // why does this work but not listing the type on the left side?
+        const cEl = <HTMLCanvasElement>document.querySelector('#canvas');
+        const tsEl = <HTMLElement>document.querySelector('#tools');
+        if (!(cEl && tsEl)) {
+            throw new Error("Can't find required HTML elements.");
+        }
+        else {
+            this.canvasEl = cEl;
+            this.toolSelectEl = tsEl;
+        }
+
+        // FIXME: using <any> because NodeListOf<Element> seems to be missing
+        // typedefs for iteration
+        const toolButtons: HTMLElement[] = <any>this.toolSelectEl.querySelectorAll('.tool');
 
         // setup Paper.js against canvas
-        P.setup(this.el);
+        P.setup(this.canvasEl);
+        const paperTool = new P.Tool();
         // view bindings
         // TODO: resizing is broken, for some reason Paper.js view likes to
         // strictly style the canvas element dims and won't respect updates to viewSize
         P.view.onFrame = this.onAnimationFrame.bind(this);
+
         // mouse bindings
-        const tool = new P.Tool();
-        tool.onMouseDown = this.onClick.bind(this);
+        paperTool.onMouseDown = this.onClick.bind(this);
+        toolButtons.forEach((toolEl) => {
+            const domName = toolEl.getAttribute('data-tool-name');
+            if (isToolDomName(domName)) {
+                const toolName = this.getToolNameForDomName(domName);
+                toolEl.onmouseup = this.onToolSelect.bind(this, toolName);
+            }
+            else {
+                throw new Error("Couldn't bind tool buttons.");
+            }
+        })
+
+        // prevent right click context menu
+        this.canvasEl.addEventListener('contextmenu', event => event.preventDefault());
+        this.toolSelectEl.addEventListener('contextmenu', event => event.preventDefault());
 
         this.doodle = new Doodle();
         this.lastTimestamp = 0;
 
-        this.tools = new ToolGroup({
-            head: (point: P.Point) => {
-                return {
-                    point: point,
-                    defaultPoint: point,
-                    radius: Draw.ptPixels(),
-                    color: '#DDDDDD'
-                };
-            },
-            appendage: (point: P.Point) => {
-                return {
-                    point: point,
-                    defaultPoint: point,
-                    radius: Draw.ptPixels(),
-                    color: '#DDDDDD'
-                };
-            },
-            eye: (point: P.Point) => {
-                return {
-                    point: point,
-                    defaultPoint: point,
-                    radius: Draw.ptPixels(),
-                    color: '#DDDDDD'
-                };
-            },
-            body: (point: P.Point) => {
-                return {
-                    point: point,
-                    defaultPoint: point,
-                    radius: Draw.ptPixels(),
-                    color: '#DDDDDD'
-                };
-            },
-        });
-        this.currentTool = this.tools.appendage;
+        this.tools = ToolGroup.defaultTools();
+        this.currentTool = this.tools.arm;
 
         this.updateFrame();
     }
 
-    getCurrentPartList() {
-        const tool = this.currentTool;
-        const doodle = this.doodle;
+    getTool(name: ToolName) {
+        switch (name) {
+            case ToolName.Head:
+                return this.tools.head;
+            case ToolName.Arm:
+                return this.tools.arm;
+            case ToolName.Eye:
+                return this.tools.eye;
+            case ToolName.Body:
+                return this.tools.body;
+            default:
+                return assertNever(name);
+        }
+    }
 
+    getPartListForTool(tool: Tool) {
         // FIXME: for some reason compile time exhaustiveness checking
         // requires throwing or returning a never type, which can't happen
         // inline conveniently (without being a return switch statement).
         // Is there a better way to do this?
         switch (tool.name) {
             case ToolName.Head:
-                return doodle.head;
-            case ToolName.Appendage:
-                return doodle.appendage;
+                return this.doodle.head;
+            case ToolName.Arm:
+                return this.doodle.arm;
             case ToolName.Eye:
-                return doodle.eye;
+                return this.doodle.eye;
             case ToolName.Body:
-                return doodle.body;
+                return this.doodle.body;
             default:
                 return assertNever(tool.name);
         }
+    }
+
+    getToolNameForDomName(name: ToolDomName): ToolName {
+        switch (name) {
+            case 'head':
+                return ToolName.Head;
+            case 'arm':
+                return ToolName.Arm;
+            case 'eye':
+                return ToolName.Eye;
+            case 'body':
+                return ToolName.Body;
+            default:
+                return assertNever(name);
+        }
+    }
+
+    getCurrentPartList() {
+        return this.getPartListForTool(this.currentTool);
     }
 
     // FIXME: this should be typeof P.ToolEvent but it lacks a type signature to access original event button type
@@ -113,31 +147,35 @@ class App {
         const buttons: PaperMouseEventButtons = event.event.buttons;
         switch (buttons) {
             case PaperMouseEventButtons.Left:
-                return this.onLeftClick(event);
+                return this.onGeneratePart(event);
             case PaperMouseEventButtons.Right:
-                return this.onRightClick(event);
+                return this.onRemovePart(event);
             case PaperMouseEventButtons.Middle:
-                return this.onMiddleClick(event);
+                return this.onOptionsPart(event);
             default:
                 return assertNever(buttons);
         }
     }
 
-    onLeftClick(event: P.MouseEvent) {
+    onToolSelect(name: ToolName) {
+        this.currentTool = this.getTool(name);
+    }
+
+    onGeneratePart(event: P.MouseEvent) {
         event.preventDefault();
         const genPart = this.currentTool.makePart(event.point);
         this.getCurrentPartList().push(genPart);
         this.updateFrame();
     }
 
-    onRightClick(event: P.MouseEvent) {
+    onRemovePart(event: P.MouseEvent) {
         event.preventDefault();
-        console.log('rclick not implemented')
+        console.log('remove not implemented')
     }
 
-    onMiddleClick(event: P.MouseEvent) {
+    onOptionsPart(event: P.MouseEvent) {
         event.preventDefault();
-        console.log('mclick not implemented')
+        console.log('options not implemented')
     }
 
     onAnimationFrame(event: PaperFrameEvent) {

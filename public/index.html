@@ -28,8 +28,10 @@
 
       #tools {
         margin: auto;
+        justify-content: space-between;
+        width: 50%;
       }
-      
+
       #canvas {
         background-color: #DDFFDD;
         border: 3px solid maroon;
@@ -43,10 +45,10 @@
     <div id="container" class="col">
       <h1 id="title">Doodles here.</h1>
       <div id="tools" class="row">
-        <div>e</div>
-        <div>h</div>
-        <div>b</div>
-        <div>a</div>
+        <div class="tool" data-tool-name="eye">eye</div>
+        <div class="tool" data-tool-name="head">hed</div>
+        <div class="tool" data-tool-name="body">bod</div>
+        <div class="tool" data-tool-name="arm">arm</div>
       </div>
       <canvas id="canvas"></canvas>
     </div>
